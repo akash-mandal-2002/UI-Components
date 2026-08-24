@@ -1,0 +1,200 @@
+// "use client";
+
+// import { useState, useMemo } from "react";
+// import { motion, AnimatePresence } from "motion/react";
+// import { Search, X } from "lucide-react";
+
+// const CONTACTS = [
+//   { id: 1, name: "Alice Johnson", avatar: "https://i.pravatar.cc/150?img=1" },
+//   { id: 2, name: "Bob Smith", avatar: "https://i.pravatar.cc/150?img=2" },
+//   { id: 3, name: "Carol White", avatar: "https://i.pravatar.cc/150?img=3" },
+//   { id: 4, name: "David Brown", avatar: "https://i.pravatar.cc/150?img=4" },
+//   { id: 5, name: "Eva Martinez", avatar: "https://i.pravatar.cc/150?img=5" },
+//   { id: 6, name: "Frank Lee", avatar: "https://i.pravatar.cc/150?img=6" },
+//   { id: 7, name: "Grace Kim", avatar: "https://i.pravatar.cc/150?img=7" },
+//   { id: 8, name: "Henry Wilson", avatar: "https://i.pravatar.cc/150?img=8" },
+// ];
+
+// const headerVariants = {
+//   hidden: { opacity: 0, y: -10 },
+//   visible: { opacity: 1, y: 0, transition: { duration: 0.25, delay: 0.1 } },
+// };
+
+// const searchVariants = {
+//   hidden: { opacity: 0, y: -10 },
+//   visible: { opacity: 1, y: 0, transition: { duration: 0.25, delay: 0.15 } },
+// };
+
+// const listVariants = {
+//   hidden: { opacity: 0 },
+//   visible: {
+//     opacity: 1,
+//     transition: {
+//       staggerChildren: 0.05,
+//       delayChildren: 0.2,
+//     },
+//   },
+// };
+
+// const itemVariants = {
+//   hidden: { opacity: 0, x: -10 },
+//   visible: { opacity: 1, x: 0, transition: { duration: 0.2 } },
+// };
+
+// function Modal() {
+//   const [isOpen, setIsOpen] = useState(false);
+//   const [searchQuery, setSearchQuery] = useState("");
+
+//   const filteredContacts = useMemo(() => {
+//     if (!searchQuery.trim()) return CONTACTS;
+//     return CONTACTS.filter((c) =>
+//       c.name.toLowerCase().includes(searchQuery.toLowerCase())
+//     );
+//   }, [searchQuery]);
+
+//   return (
+//     <div className="min-h-screen flex items-center justify-center">
+//       <div className="relative w-[350px] h-[600px]">
+
+//         {/* Animated Box */}
+//         <motion.div
+//           initial={false}
+//           animate={{
+//             clipPath: isOpen
+//               ? "circle(560px at 298px 448px)"
+//               : "circle(0px at 298px 448px)",
+//             opacity: isOpen ? 1 : 0,
+//           }}
+//           transition={{ duration: 0.35, ease: "easeOut" }}
+//           className={`absolute inset-0 bg-[#202932] border border-[1.5px] border-[#30404D] rounded-xl shadow-[0_12px_40px_rgba(0,0,0,0.4)] overflow-hidden flex flex-col p-6 pb-24 ${
+//             isOpen ? "pointer-events-auto" : "pointer-events-none"
+//           }`}
+//         >
+//           {/* Header */}
+//           <motion.div
+//             variants={headerVariants}
+//             animate={isOpen ? "visible" : "hidden"}
+//             initial="hidden"
+//             className="flex items-center justify-between mb-5 flex-shrink-0"
+//           >
+//             <h3 className="text-lg font-semibold text-white tracking-wide">
+//               New Chat
+//             </h3>
+//             <span className="text-xs font-semibold px-2 py-0.5 bg-blue-500/10 text-blue-400 rounded-full border border-blue-500/25">
+//               {CONTACTS.length} contacts
+//             </span>
+//           </motion.div>
+
+//           {/* Search Bar */}
+//           <motion.div
+//             variants={searchVariants}
+//             animate={isOpen ? "visible" : "hidden"}
+//             initial="hidden"
+//             className="relative mb-5 flex-shrink-0"
+//           >
+//             <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-400 pointer-events-none" />
+//             <input
+//               type="text"
+//               placeholder="Search contacts..."
+//               value={searchQuery}
+//               onChange={(e) => setSearchQuery(e.target.value)}
+//               className="w-full bg-[#171E25] border border-[#2B3744] rounded-xl pl-10 pr-9 py-2 text-sm text-slate-100 placeholder-slate-400 focus:outline-none focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/30 transition-all duration-200"
+//             />
+//             {searchQuery && (
+//               <button
+//                 onClick={() => setSearchQuery("")}
+//                 className="absolute right-3 top-2.5 text-slate-400 hover:text-slate-200 transition-colors cursor-pointer"
+//               >
+//                 <X className="h-4 w-4" />
+//               </button>
+//             )}
+//           </motion.div>
+
+//           {/* Scrollable Contact List */}
+//           <div className="flex-1 overflow-y-auto pr-1 space-y-1.5 custom-scrollbar">
+//             {filteredContacts.length === 0 ? (
+//               <motion.div
+//                 initial={{ opacity: 0 }}
+//                 animate={{ opacity: 1 }}
+//                 className="flex flex-col items-center justify-center py-12 text-slate-500"
+//               >
+//                 <Search className="h-8 w-8 mb-2 opacity-30" />
+//                 <p className="text-sm font-medium">No contacts found</p>
+//                 <p className="text-xs text-slate-600">Try searching for someone else</p>
+//               </motion.div>
+//             ) : (
+//               <motion.div
+//                 variants={listVariants}
+//                 animate={isOpen ? "visible" : "hidden"}
+//                 initial="hidden"
+//                 className="space-y-2"
+//               >
+//                 {filteredContacts.map((contact) => (
+//                   <motion.div
+//                     key={contact.id}
+//                     variants={itemVariants}
+//                     whileHover={{
+//                       backgroundColor: "rgba(48, 64, 77, 0.4)",
+//                       x: 4,
+//                       transition: { duration: 0.15 },
+//                     }}
+//                     whileTap={{ scale: 0.98 }}
+//                     className="flex items-center gap-3.5 p-2  rounded-xl cursor-pointer border border-transparent  hover:border-[#30404D]/40 transition-colors duration-150 group"
+//                   >
+//                     {/* Avatar */}
+//                     <div className="relative flex-shrink-0 w-11 h-11 rounded-full overflow-hidden border border-[#2B3744] group-hover:border-blue-500/40 transition-colors duration-200">
+//                       <img
+//                         src={contact.avatar}
+//                         alt={contact.name}
+//                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+//                       />
+//                     </div>
+
+//                     {/* Name */}
+//                     <div className="flex-1 min-w-0">
+//                       <span className="block text-[15px] font-medium text-slate-300 group-hover:text-white transition-colors duration-150 truncate">
+//                         {contact.name}
+//                       </span>
+//                     </div>
+//                   </motion.div>
+//                 ))}
+//               </motion.div>
+//             )}
+//           </div>
+//         </motion.div>
+
+//         {/* Toggle Button */}
+//         <motion.div
+//           onClick={() => setIsOpen((prev) => !prev)}
+//           whileHover={{ scale: 1.05 }}
+//           whileTap={{ scale: 0.95 }}
+//           transition={{ type: "spring", stiffness: 500, damping: 20, mass: 0.8 }}
+//           className="absolute bottom-6 right-6 z-50 bg-blue-500 rounded-full flex items-center justify-center w-12 h-12 cursor-pointer hover:bg-blue-600 transition-colors"
+//         >
+//           <AnimatePresence mode="wait" initial={false}>
+            
+//               <motion.div
+//                 key="open"
+//                 initial={{ rotate: 90, opacity: 0, scale: 0.8 }}
+//                 animate={{ rotate: 0, opacity: 1, scale: 1 }}
+//                 exit={{ rotate: -90, opacity: 0, scale: 0.8 }}
+//                 transition={{ duration: 0.15 }}
+//                 className="flex items-center justify-center"
+//               >
+//                 <svg xmlns="http://www.w3.org/2000/svg" width="1.9em" height="1.9em" viewBox="0 0 16 16">
+//                   <path
+//                     fill="#ffffff"
+//                     d="M8 2a6 6 0 1 1-3.004 11.195l-2.338.78a.5.5 0 0 1-.639-.612l.712-2.491A6 6 0 0 1 8 2m.5 3.5a.5.5 0 0 0-1 0v2h-2a.5.5 0 0 0 0 1h2v2a.5.5 0 0 0 1 0v-2h2a.5.5 0 0 0 0-1h-2z"
+//                   />
+//                 </svg>
+//               </motion.div>
+           
+//           </AnimatePresence>
+//         </motion.div>
+
+//       </div>
+//     </div>
+//   );
+// }
+
+// export default Modal;

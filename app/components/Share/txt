@@ -1,0 +1,171 @@
+"use client"
+
+import React, { useState } from 'react';
+import {
+  Sparkles,
+  Command,
+  Settings,
+  Link2,
+  ChevronRight,
+  Eye,
+  Type,
+  CheckCircle,
+  Copy,
+  Info
+} from 'lucide-react';
+import ShareDropdown from '@/app/components/Share/ShareDropDown';
+import NotificationToast from '@/app/components/Share/Notifications';
+import {
+  DropdownTheme,
+  ButtonSize,
+  DropdownPosition,
+  AnimationStyle,
+  ShareConfig,
+  ToastMessage
+} from '@/app/type';
+
+export default function App() {
+  // Config state for sharing
+  const [shareConfig, setShareConfig] = useState<ShareConfig>({
+    url: 'https://github.com/google/genai',
+    title: 'The Google GenAI SDK for Node/TypeScript',
+    description: 'Learn the modern, unified way of calling Gemini 2.5 Flash and Pro models using @google/genai.'
+  });
+
+  // Share dropdown parameters state
+  const [activeTheme, setActiveTheme] = useState<DropdownTheme>('minimalist');
+  const [activeSize, setActiveSize] = useState<ButtonSize>('md');
+  const [activePosition, setActivePosition] = useState<DropdownPosition>('bottom-end');
+  const [activeAnimation, setActiveAnimation] = useState<AnimationStyle>('spring-slide');
+  const [showChevron, setShowChevron] = useState(true);
+  const [customButtonText, setCustomButtonText] = useState('Share Resource');
+
+  // Interactive UI state for mockup
+  const [likeCount, setLikeCount] = useState(142);
+  const [hasLiked, setHasLiked] = useState(false);
+
+  // Toast stack state
+  const [toasts, setToasts] = useState<ToastMessage[]>([]);
+
+  // Toast handler helper
+  const addToast = (message: string, type: 'success' | 'info' | 'error' = 'success') => {
+    const id = Date.now().toString();
+    setToasts((prev) => [...prev, { id, message, type }]);
+    setTimeout(() => {
+      dismissToast(id);
+    }, 4000);
+  };
+
+  const dismissToast = (id: string) => {
+    setToasts((prev) => prev.filter((t) => t.id !== id));
+  };
+
+  // Preset configuration selections
+  const themes: { name: string; value: DropdownTheme; desc: string }[] = [
+    { name: 'Minimalist', value: 'minimalist', desc: 'Default light/dark responsive slate border design' },
+    { name: 'Glassmorphic', value: 'glass', desc: 'Frosted crystal backdrop filter with double borders' },
+    { name: 'Sleek Dark', value: 'dark', desc: 'Velvet dark palette for charcoal interfaces' },
+    { name: 'Indigo Accents', value: 'indigo', desc: 'Royal blue highlighted buttons and selection zones' },
+    { name: 'Bold Light', value: 'light', desc: 'High-contrast bold labels and modern curves' }
+  ];
+
+  const sizes: { name: string; value: ButtonSize }[] = [
+    { name: 'Small', value: 'sm' },
+    { name: 'Medium', value: 'md' },
+    { name: 'Large', value: 'lg' }
+  ];
+
+  const positions: { name: string; value: DropdownPosition }[] = [
+    { name: 'Bottom End (Right)', value: 'bottom-end' },
+    { name: 'Bottom Start (Left)', value: 'bottom-start' },
+    { name: 'Top End (Right)', value: 'top-end' },
+    { name: 'Top Start (Left)', value: 'top-start' },
+    { name: 'Left Start (Side)', value: 'left-start' },
+    { name: 'Right Start (Side)', value: 'right-start' }
+  ];
+
+  const animations: { name: string; value: AnimationStyle; description: string }[] = [
+    { name: 'Spring Slide', value: 'spring-slide', description: 'Snappy bounce entrance alignment' },
+    { name: 'Fade & Drop', value: 'fade-drop', description: 'Smooth ease-out drift and opacity' },
+    { name: 'Scale Elastic', value: 'scale-elastic', description: 'Playful organic growth pop' }
+  ];
+
+  const copyConfigUrl = async () => {
+    try {
+      await navigator.clipboard.writeText(shareConfig.url);
+      addToast('Shared URL copied to clipboard!', 'success');
+    } catch (err) {
+      addToast('Permissions blocked copy function', 'error');
+    }
+  };
+
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-neutral-50 text-neutral-800 dark:bg-neutral-950 dark:text-neutral-100 font-sans transition-colors duration-300" id="main-playground">
+
+
+
+
+
+      <div className="flex flex-col gap-2">
+              <span className="text-xs font-semibold text-neutral-400 dark:text-neutral-500 uppercase tracking-widest">
+                Visual Themes
+              </span>
+              <div className="grid grid-cols-1 gap-1.5">
+                {themes.map((theme) => (
+                  <button
+                    key={theme.value}
+                    onClick={() => setActiveTheme(theme.value)}
+                    className={`flex flex-col text-left p-2.5 rounded-xl border text-xs cursor-pointer transition-all ${
+                      activeTheme === theme.value
+                        ? 'bg-neutral-900 border-neutral-900 text-white dark:bg-white dark:border-white dark:text-neutral-950 shadow-xs ring-4 ring-neutral-900/10 dark:ring-white/10'
+                        : 'bg-neutral-50 hover:bg-neutral-100 border-neutral-200 dark:bg-neutral-950 dark:hover:bg-neutral-800/30 dark:border-neutral-800 text-neutral-800 dark:text-neutral-200'
+                    }`}
+                  >
+                    <span className="font-semibold block">{theme.name}</span>
+                    <span className={`text-[10px] ${activeTheme === theme.value ? 'text-neutral-300 dark:text-neutral-600' : 'text-neutral-400'}`}>
+                      {theme.desc}
+                    </span>
+                  </button>
+                ))}
+              </div>
+            </div>
+      
+
+
+       
+
+
+
+
+
+
+          <div>
+            <ShareDropdown
+              config={shareConfig}
+              theme={activeTheme}
+              size={activeSize}
+              position={activePosition}
+              animationStyle={activeAnimation}
+
+              buttonText={customButtonText}
+              onShareSuccess={(msg) => addToast(msg, 'success')}
+            />
+          </div>
+
+
+
+
+
+
+
+
+       
+
+      
+
+      {/* Pop-up Toast Notifications */}
+      <NotificationToast toasts={toasts} onDismiss={dismissToast} />
+
+    </div>
+  );
+}

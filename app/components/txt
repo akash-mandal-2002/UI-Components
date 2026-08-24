@@ -1,0 +1,34 @@
+ <div className="flex flex-col items-center gap-4">
+          <p className="text-[11px] font-medium text-zinc-400 uppercase tracking-widest">Soft Minimal</p>
+          <motion.button
+            whileHover={{ scale: 1.02, backgroundColor: "#F4F4F5" }}
+            whileTap={{ scale: 0.98 }}
+            className="group flex items-center gap-2.5 px-5 py-2.5 bg-white border border-zinc-200/60 rounded-full shadow-[0_1px_2px_rgba(0,0,0,0.02)] transition-all duration-200"
+          >
+            <span className="text-[14px] font-medium text-zinc-600 transition-colors group-hover:text-zinc-900">
+              Share
+            </span>
+            <Plus size={16} strokeWidth={2} className="text-zinc-400 group-hover:text-zinc-900 transition-colors" />
+          </motion.button>
+        </div>
+
+
+
+
+
+
+   <div className="flex flex-col items-center gap-4">
+          <p className="text-[11px] font-medium text-zinc-400 uppercase tracking-widest">Inverted Sharp</p>
+          <motion.button
+            whileHover={{ scale: 1.02, backgroundColor: "#18181B" }}
+            whileTap={{ scale: 0.98 }}
+            className="flex items-center gap-2.5 px-6 py-2.5 bg-black text-white rounded-full shadow-lg shadow-black/5"
+          >
+            <span className="text-[14px] font-medium tracking-tight">Share Project</span>
+            <Share2 size={15} strokeWidth={2.5} />
+          </motion.button>
+        </div>
+
+
+
+        

@@ -1,0 +1,816 @@
+import React, { useState, useEffect, useRef } from 'react';
+import { motion, AnimatePresence } from 'motion/react';
+import {
+  Share2,
+  Link,
+  Mail,
+  Linkedin,
+  Twitter,
+  Send,
+  MessageSquare,
+  Facebook,
+  Check,
+  ChevronDown,
+  Sparkles,
+  Command,
+  Monitor
+} from 'lucide-react';
+import {
+  DropdownTheme,
+  ButtonSize,
+  DropdownPosition,
+  AnimationStyle,
+  ShareOption,
+  ShareConfig
+} from '../types';
+
+
+
+export default function page({
+  config,
+  theme = 'minimalist',
+  size = 'md',
+  position = 'bottom-end',
+  animationStyle = 'spring-slide',
+  showChevron = true,
+  buttonText = 'Share',
+  onShareSuccess
+}) {
+  const [isOpen, setIsOpen] = useState(false);
+  const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [focusedIndex, setFocusedIndex] = useState<number>(-1);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  // Close when clicking outside
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (containerRef.current && !containerRef.current.contains(event.target)) {
+        setIsOpen(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  // Keyboard navigation for focus
+  useEffect(() => {
+    if (!isOpen) {
+      setFocusedIndex(-1);
+      return;
+    }
+
+    function handleKeyDown(e) {
+      if (e.key === 'Escape') {
+        setIsOpen(false);
+        triggerRef.current?.focus();
+        return;
+      }
+
+      const optionsLength = DEFAULT_SHARE_OPTIONS.length;
+
+      if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        setFocusedIndex((prev) => (prev + 1 >= optionsLength ? 0 : prev + 1));
+      } else if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        setFocusedIndex((prev) => (prev - 1 < 0 ? optionsLength - 1 : prev - 1));
+      } else if (e.key === 'Enter' || e.key === ' ') {
+        if (focusedIndex >= 0 && focusedIndex < optionsLength) {
+          e.preventDefault();
+          const option = DEFAULT_SHARE_OPTIONS[focusedIndex];
+          handleOptionClick(option);
+        }
+      }
+    }
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, focusedIndex]);
+
+  // Sync menu state focus when open
+  useEffect(() => {
+    if (focusedIndex >= 0 && menuRef.current) {
+      const items = menuRef.current.querySelectorAll('[role="menuitem"]');
+      const target = items[focusedIndex];
+      target?.focus();
+    }
+  }, [focusedIndex]);
+
+  // Copy helper
+  const handleCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(config.url);
+      setCopiedId('copy');
+      if (onShareSuccess) {
+        onShareSuccess('Copied link directly to clipboard!');
+      }
+      setTimeout(() => setCopiedId(null), 2000);
+    } catch (err) {
+      console.error('Failed to copy', err);
+    }
+  };
+
+  // Click handler
+  const handleOptionClick = async (option) => {
+    if (option.actionType === 'copy') {
+      await handleCopy();
+      setIsOpen(false);
+      return;
+    }
+
+    if (option.actionType === 'native') {
+      if (navigator.share) {
+        try {
+          await navigator.share({
+            title: config.title,
+            text: config.description,
+            url: config.url
+          });
+          if (onShareSuccess) onShareSuccess('Shared via system dialog!');
+        } catch (err) {
+          // User cancelled or failure
+          console.warn('System share error or cancellation:', err);
+        }
+      } else {
+        // Fallback: Copy link
+        await handleCopy();
+      }
+      setIsOpen(false);
+      return;
+    }
+
+    // Social & Email Intents
+    if (option.urlTemplate) {
+      const formattedUrl = option.urlTemplate
+        .replace('{url}', encodeURIComponent(config.url))
+        .replace('{title}', encodeURIComponent(config.title))
+        .replace('{desc}', encodeURIComponent(config.description));
+
+      // Attempt popup
+      try {
+        const width = 600;
+        const height = 450;
+        const left = window.screen.width / 2 - width / 2;
+        const top = window.screen.height / 2 - height / 2;
+        
+        window.open(
+          formattedUrl,
+          `share_${option.actionType}`,
+          `width=${width},height=${height},left=${left},top=${top},toolbar=0,status=0,resizable=yes`
+        );
+        
+        if (onShareSuccess) {
+          onShareSuccess(`Opened sharing pop-up for ${option.name}!`);
+        }
+      } catch (err) {
+        // In case window.open is blocked/fails inside sandboxed iframe, write link to console and tell user
+        console.log("Intent url blocked by sandbox/browser popup block:", formattedUrl);
+        if (onShareSuccess) {
+          onShareSuccess(`Sharing via ${option.name} triggered!`);
+        }
+      }
+    }
+    setIsOpen(false);
+  };
+
+  // Sizing definitions
+  const buttonSizing = {
+    sm: 'px-3 py-1.5 text-xs gap-1.5 rounded-md font-medium',
+    md: 'px-4 py-2 text-sm gap-2 rounded-lg font-medium',
+    lg: 'px-5 py-2.5 text-base gap-2.5 rounded-xl font-medium'
+  };
+
+  const iconSizing = {
+    sm: 'w-3.5 h-3.5',
+    md: 'w-4 h-4',
+    lg: 'w-5 h-5'
+  };
+
+  // Theme styling configurations
+  const themeStyles = {
+    minimalist: {
+      button: 'bg-white hover:bg-neutral-50 text-neutral-800 border border-neutral-200/80 shadow-xs dark:bg-neutral-900 dark:hover:bg-neutral-800/60 dark:text-neutral-200 dark:border-neutral-800 active:bg-neutral-100 dark:active:bg-neutral-900 duration-150',
+      dropdown: 'bg-white dark:bg-neutral-900 border border-neutral-200/70 dark:border-neutral-800/90 shadow-lg dark:shadow-black/50 rounded-xl p-1 w-56',
+      item: 'flex items-center w-full px-3 py-2 text-[13px] rounded-lg text-neutral-600 dark:text-neutral-400 font-medium transition-all outline-none focus:bg-neutral-50 dark:focus:bg-neutral-800/50 focus:text-neutral-900 dark:focus:text-neutral-200 cursor-pointer'
+    },
+    light: {
+      button: 'bg-neutral-900 hover:bg-neutral-800 text-white shadow-md dark:bg-white dark:hover:bg-neutral-100 dark:text-neutral-900 duration-150',
+      dropdown: 'bg-white border border-neutral-100 shadow-xl rounded-2xl p-1.5 w-60',
+      item: 'flex items-center w-full px-3.5 py-2.5 text-sm rounded-xl text-neutral-700 font-medium transition-all outline-none focus:bg-neutral-50 focus:text-neutral-950 cursor-pointer'
+    },
+    dark: {
+      button: 'bg-neutral-800 hover:bg-neutral-700 text-white border border-neutral-700/50 shadow-md',
+      dropdown: 'bg-neutral-950 border border-neutral-800 shadow-2xl rounded-xl p-1 w-56',
+      item: 'flex items-center w-full px-3 py-2 text-[13px] rounded-lg text-neutral-300 font-medium transition-all outline-none focus:bg-neutral-900 focus:text-white cursor-pointer'
+    },
+    indigo: {
+      button: 'bg-indigo-600 hover:bg-indigo-700 text-white font-semibold shadow-xs border border-indigo-500/20 active:scale-[0.98] duration-150',
+      dropdown: 'bg-white border border-indigo-100 shadow-xl rounded-2xl p-1.5 w-56',
+      item: 'flex items-center w-full px-3 py-2 text-sm rounded-xl text-indigo-950 hover:bg-indigo-50/50 border border-transparent hover:border-indigo-100/30 font-medium transition-all outline-none focus:bg-indigo-50 cursor-pointer'
+    },
+    glass: {
+      button: 'backdrop-blur-md bg-white/40 dark:bg-black/35 border border-white/40 dark:border-white/10 text-neutral-800 dark:text-white shadow-sm hover:bg-white/60 dark:hover:bg-black/45 duration-150',
+      dropdown: 'backdrop-blur-xl bg-white/75 dark:bg-neutral-950/75 border border-white/50 dark:border-white/10 shadow-2xl p-1.5 w-60 rounded-2xl',
+      item: 'flex items-center w-full px-3.5 py-2.5 text-sm rounded-xl text-neutral-700 dark:text-neutral-300 font-medium transition-all outline-none focus:bg-white/60 dark:focus:bg-white/5 focus:text-neutral-950 dark:focus:text-white cursor-pointer'
+    }
+  };
+
+  // Animation variants mapping
+  const animationVariants = {
+    'spring-slide': {
+      hidden: { opacity: 0, y: 8, scale: 0.96 },
+      visible: {
+        opacity: 1,
+        y: 0,
+        scale: 1,
+        transition: { type: 'spring', stiffness: 380, damping: 24 }
+      },
+      exit: {
+        opacity: 0,
+        y: 5,
+        scale: 0.96,
+        transition: { duration: 0.12, ease: 'easeOut' }
+      }
+    },
+    'fade-drop': {
+      hidden: { opacity: 0, y: -6 },
+      visible: {
+        opacity: 1,
+        y: 0,
+        transition: { duration: 0.18, ease: [0.16, 1, 0.3, 1] }
+      },
+      exit: {
+        opacity: 0,
+        y: -4,
+        transition: { duration: 0.12, ease: 'easeIn' }
+      }
+    },
+    'scale-elastic': {
+      hidden: { opacity: 0, scale: 0.75, y: 4 },
+      visible: {
+        opacity: 1,
+        scale: 1,
+        y: 0,
+        transition: { type: 'spring', stiffness: 480, damping: 18 }
+      },
+      exit: {
+        opacity: 0,
+        scale: 0.85,
+        transition: { duration: 0.1 }
+      }
+    }
+  };
+
+  // Dynamic positioning classes
+  const positionClasses = {
+    'bottom-start': 'top-full left-0 mt-1.5 origin-top-left',
+    'bottom-end': 'top-full right-0 mt-1.5 origin-top-right',
+    'top-start': 'bottom-full left-0 mb-1.5 origin-bottom-left',
+    'top-end': 'bottom-full right-0 mb-1.5 origin-bottom-right',
+    'left-start': 'right-full top-0 mr-1.5 origin-top-right',
+    'right-start': 'left-full top-0 ml-1.5 origin-top-left'
+  };
+
+  const selectedTheme = themeStyles[theme];
+
+  return (
+    <div ref={containerRef} className="relative inline-block text-left" id="share_dropdown_container">
+      {/* Share Button Trigger */}
+      <motion.button
+        ref={triggerRef}
+        onClick={() => setIsOpen(!isOpen)}
+        aria-haspopup="true"
+        aria-expanded={isOpen}
+        whileTap={{ scale: 0.98 }}
+        className={`flex items-center justify-center cursor-pointer select-none active:scale-95 ${buttonSizing[size]} ${selectedTheme.button}`}
+        id="share_trigger_button"
+      >
+        <Share2 className={`${iconSizing[size]} shrink-0`} />
+        <span>{buttonText}</span>
+        {showChevron && (
+          <ChevronDown
+            className={`${iconSizing[size]} text-neutral-400 dark:text-neutral-500 transition-transform duration-250 ${
+              isOpen ? 'rotate-180' : 'rotate-0'
+            }`}
+          />
+        )}
+      </motion.button>
+
+      {/* Animated Dropdown Menu */}
+      <AnimatePresence>
+        {isOpen && (
+          <motion.div
+            ref={menuRef}
+            role="menu"
+            aria-orientation="vertical"
+            id="share_dropdown_menu"
+            className={`absolute z-50 ${positionClasses[position]} ${selectedTheme.dropdown}`}
+            variants={animationVariants[animationStyle]}
+            initial="hidden"
+            animate="visible"
+            exit="exit"
+          >
+            {/* Minimal Header (shows when theme is descriptive) */}
+            {theme === 'glass' || theme === 'indigo' ? (
+              <div className="px-3.5 py-1.5 mb-1 border-b border-neutral-100 dark:border-neutral-800">
+                <span className="text-[10px] uppercase tracking-wider text-neutral-400 font-bold flex items-center gap-1">
+                  <Command className="w-3 h-3" /> Share Document
+                </span>
+              </div>
+            ) : null}
+
+            <div className="flex flex-col gap-0.5">
+              {DEFAULT_SHARE_OPTIONS.map((option, idx) => {
+                // Handle dynamic native sharing existence
+                if (option.actionType === 'native' && typeof navigator.share === 'undefined') {
+                  return null; // Skip if native share isn't supported in current environment
+                }
+
+                const CustomIcon = option.actionType === 'native' ? Monitor : iconMap[option.icon];
+                const isCopied = option.actionType === 'copy' && copiedId === 'copy';
+
+                return (
+                  <button
+                    key={option.id}
+                    role="menuitem"
+                    tabIndex={isOpen ? 0 : -1}
+                    onMouseEnter={() => setFocusedIndex(idx)}
+                    onClick={() => handleOptionClick(option)}
+                    className={`group ${selectedTheme.item} ${option.bgHover}`}
+                    id={`share_item_${option.id}`}
+                  >
+                    <div className="flex items-center justify-between w-full">
+                      <div className="flex items-center gap-2.5">
+                        <span className={`transition-all duration-200 shrink-0 ${option.color} group-hover:scale-110`}>
+                          {isCopied ? (
+                            <Check className="w-4 h-4 text-emerald-500" />
+                          ) : CustomIcon ? (
+                            <CustomIcon className="w-4 h-4" />
+                          ) : null}
+                        </span>
+                        <span className="truncate">
+                          {isCopied ? 'Link Copied!' : option.name}
+                        </span>
+                      </div>
+                      
+                      {/* Keyboard shortcuts or small arrow hints */}
+                      {option.actionType === 'copy' && !isCopied && (
+                        <kbd className="hidden sm:inline-flex items-center gap-0.5 px-1.5 py-0.5 text-[9px] font-mono text-neutral-400 dark:text-neutral-500 border border-neutral-100 dark:border-neutral-800 rounded bg-neutral-50 dark:bg-neutral-900 group-hover:border-neutral-200">
+                          ⌘C
+                        </kbd>
+                      )}
+                      {option.actionType !== 'copy' && option.actionType !== 'native' && (
+                        <span className="opacity-0 group-hover:opacity-100 group-focus:opacity-100 text-neutral-400 dark:text-neutral-600 transition-opacity duration-150">
+                          <Check className="w-3.5 h-3.5 text-neutral-300 dark:text-neutral-700" />
+                        </span>
+                      )}
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
+
+
+
+ {/* Core Animated Modal Panel using Elegant Dark color matches */}
+          <motion.div
+            initial={false}
+            animate={{
+              clipPath: isOpen
+                ? "circle(720px at 320px 600px)"
+                : "circle(0px at 320px 600px)",
+              opacity: isOpen ? 1 : 0,
+            }}
+            transition={{ duration: 0.45, ease: [0.19, 1, 0.22, 1] }}
+            className={`absolute inset-0 bg-[#1B2430] z-20 flex flex-col pt-8 pb-4 ${
+              isOpen ? "pointer-events-auto" : "pointer-events-none"
+            }`}
+          >
+            {/* Inner View Handler */}
+            <AnimatePresence mode="wait">
+              {activeChatContact ? (
+                /* 1. CHAT & DIRECT CONVERSATION INTERACTIVE VIEW */
+                <motion.div
+                  key="chat"
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -25 }}
+                  transition={{ duration: 0.22, ease: "easeOut" }}
+                  className="flex-1 flex flex-col h-full overflow-hidden"
+                >
+                  {/* Chat Header */}
+                  <div className="px-6 pb-4 border-b border-[#2B3744]/30 flex items-center justify-between bg-[#1B2430]">
+                    <div className="flex items-center gap-3">
+                      <button 
+                        onClick={() => setActiveChatContact(null)}
+                        className="p-2 bg-[#232E3C] hover:bg-[#2c394c] border border-[#2B3744]/45 text-slate-400 hover:text-white rounded-xl transition-all cursor-pointer"
+                      >
+                        <ArrowLeft className="w-4 h-4" />
+                      </button>
+                      <div className="relative">
+                        <img 
+                          src={activeChatContact.avatar} 
+                          alt={activeChatContact.name} 
+                          className="w-11 h-11 rounded-full object-cover border-2 border-[#2B3744]" 
+                          referrerPolicy="no-referrer"
+                        />
+                        <span className={`absolute bottom-0 right-0 w-3 h-3 rounded-full border-2 border-[#1B2430] ${
+                          activeChatContact.status === "Online" ? "bg-green-500" :
+                          activeChatContact.status === "Away" ? "bg-amber-500" : "bg-slate-500"
+                        }`} />
+                      </div>
+                      <div>
+                        <h4 className="text-[15px] font-semibold text-white leading-tight font-display">
+                          {activeChatContact.name}
+                        </h4>
+                        <span className="text-[11px] text-slate-400 flex items-center gap-1.5">
+                          {activeChatContact.status === "Online" ? "Active now" : activeChatContact.lastSeen}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Quick call, bookmark trigger actions */}
+                    <div className="flex items-center gap-1">
+                      <button 
+                        onClick={(e) => handleToggleFavorite(activeChatContact.id, e)}
+                        className="p-2 text-slate-400 hover:text-amber-400 hover:bg-[#232E3C]/50 rounded-xl transition-all cursor-pointer"
+                      >
+                        <Star className={`w-4 h-4 ${activeChatContact.isFavorite ? "fill-amber-400 text-amber-400" : ""}`} />
+                      </button>
+                      <button className="p-2 text-slate-400 hover:text-white hover:bg-[#232E3C]/50 rounded-xl transition-all opacity-80 hover:opacity-100">
+                        <Phone className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Collapsible Contact Detail panel in chat header */}
+                  <div className="bg-[#151C26] px-6 py-3 border-b border-[#2B3744]/20">
+                    <div className="flex items-center justify-between text-[11px] text-slate-400">
+                      <span className="truncate max-w-[220px]">📧 {activeChatContact.email}</span>
+                      <span className="bg-blue-500/10 text-blue-400 px-2 py-0.5 rounded-md font-mono text-[9px] border border-blue-500/20">
+                        {activeChatContact.note.split(' ').slice(-1)[0]}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Messages Area */}
+                  <div 
+                    ref={chatContainerRef}
+                    className="flex-1 overflow-y-auto p-6 space-y-4 custom-scrollbar bg-[#1B2430]"
+                  >
+                    {(chatHistories[activeChatContact.id] || []).length === 0 ? (
+                      <div className="h-full flex flex-col items-center justify-center p-6 text-center">
+                        <div className="w-12 h-12 rounded-2xl bg-[#151C26] border border-[#2B3744]/40 flex items-center justify-center mb-3">
+                          <MessageSquare className="w-5 h-5 text-slate-500 opacity-60" />
+                        </div>
+                        <span className="text-xs font-semibold text-slate-300">Send a fast wave 👋</span>
+                        <span className="text-[10px] text-slate-500 max-w-[200px] mt-1.5 leading-relaxed">
+                          Start a simulated chat session and watch automated replies in real time.
+                        </span>
+                      </div>
+                    ) : (
+                      (chatHistories[activeChatContact.id] || []).map((msg) => {
+                        const isUser = msg.sender === "user";
+                        return (
+                          <div 
+                            key={msg.id} 
+                            className={`flex ${isUser ? "justify-end" : "justify-start"} items-end gap-2`}
+                          >
+                            {!isUser && (
+                              <img 
+                                src={activeChatContact.avatar} 
+                                alt=""
+                                className="w-6 h-6 rounded-full object-cover mb-1 border border-[#2B3744]"
+                                referrerPolicy="no-referrer"
+                              />
+                            )}
+                            <div className="flex flex-col max-w-[80%]">
+                              <div className={`p-3.5 rounded-2xl text-[13px] leading-relaxed shadow-sm ${
+                                isUser 
+                                  ? "bg-blue-600 text-white rounded-br-2xs shadow-blue-900/10" 
+                                  : "bg-[#151C26] text-slate-200 border border-[#2B3744]/30 rounded-bl-2xs"
+                              }`}>
+                                {msg.text}
+                              </div>
+                              <span className={`text-[9px] text-slate-500 font-mono mt-1 ${isUser ? "text-right" : "text-left"}`}>
+                                {msg.time} {isUser && "• Read"}
+                              </span>
+                            </div>
+                          </div>
+                        );
+                      })
+                    )}
+                  </div>
+
+                  {/* Chat Input Footer */}
+                  <div className="p-4 border-t border-[#2B3744]/30 bg-[#151C26]">
+                    <div className="flex items-center gap-2.5">
+                      <input 
+                        type="text" 
+                        placeholder="Message..." 
+                        value={messageInput}
+                        onChange={(e) => setMessageInput(e.target.value)}
+                        onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
+                        className="flex-1 bg-[#1B2430] border border-[#2B3744] rounded-xl px-4 py-3 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500/20"
+                      />
+                      <button 
+                        onClick={handleSendMessage}
+                        disabled={!messageInput.trim()}
+                        className={`px-4 py-3 rounded-xl text-xs font-semibold transition-all duration-200 cursor-pointer ${
+                          messageInput.trim() 
+                            ? "bg-blue-600 hover:bg-blue-500 text-white shadow-lg shadow-blue-500/10" 
+                            : "bg-[#232E3C] text-slate-500 cursor-not-allowed border border-[#2B3744]/30"
+                        }`}
+                      >
+                        Send
+                      </button>
+                    </div>
+                  </div>
+                </motion.div>
+              ) : isAddingContact ? (
+                /* 2. DYNAMIC 'ADD CONTACT' DRAWER FORM VIEW */
+                <motion.div
+                  key="add-contact"
+                  initial={{ opacity: 0, y: 15 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: 15 }}
+                  className="flex-1 flex flex-col p-6"
+                >
+                  <div className="flex items-center justify-between mb-6">
+                    <h3 className="font-display font-semibold text-lg text-white">Create Teammate</h3>
+                    <button 
+                      onClick={() => setIsAddingContact(false)}
+                      className="p-2 bg-[#232E3C] hover:bg-[#2c394c] rounded-xl text-slate-400 hover:text-white transition-colors cursor-pointer border border-[#2B3744]/45"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+
+                  <form onSubmit={handleCreateContact} className="flex-1 flex flex-col justify-between">
+                    <div className="space-y-4">
+                      {/* Avatar Picker */}
+                      <div>
+                        <label className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider block mb-2.5">
+                          Choose Avatar Profile
+                        </label>
+                        <div className="flex gap-3">
+                          {PRESET_AVATARS.map((avatar, idx) => (
+                            <button
+                              key={idx}
+                              type="button"
+                              onClick={() => setSelectedAvatarUrl(avatar)}
+                              className={`relative w-12 h-12 rounded-full overflow-hidden border-2 cursor-pointer transition-all duration-200 ${
+                                selectedAvatarUrl === avatar 
+                                  ? "border-blue-500 scale-105 shadow-md shadow-blue-500/20" 
+                                  : "border-[#2B3744] hover:border-slate-500"
+                              }`}
+                            >
+                              <img src={avatar} alt="" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                              {selectedAvatarUrl === avatar && (
+                                <div className="absolute inset-0 bg-blue-500/20 flex items-center justify-center">
+                                  <Check className="w-4 h-4 text-white drop-shadow" />
+                                </div>
+                              )}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Name input */}
+                      <div>
+                        <label className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider block mb-1.5">
+                          Teammate Name
+                        </label>
+                        <input 
+                          type="text" 
+                          required
+                          placeholder="e.g. Liam Sterling"
+                          value={newContactName}
+                          onChange={(e) => setNewContactName(e.target.value)}
+                          className="w-full bg-[#151C26] border border-[#2B3744] rounded-xl px-4 py-3 text-xs text-white focus:outline-none focus:border-blue-500 transition-colors"
+                        />
+                      </div>
+
+                      {/* Role input */}
+                      <div>
+                        <label className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider block mb-1.5">
+                          Professional Role / Icon
+                        </label>
+                        <input 
+                          type="text" 
+                          placeholder="e.g. Lead Developer 💻"
+                          value={newContactRole}
+                          onChange={(e) => setNewContactRole(e.target.value)}
+                          className="w-full bg-[#151C26] border border-[#2B3744] rounded-xl px-4 py-3 text-xs text-white focus:outline-none focus:border-blue-500 transition-colors"
+                        />
+                      </div>
+
+                      {/* Email input */}
+                      <div>
+                        <label className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider block mb-1.5">
+                          Work Email
+                        </label>
+                        <input 
+                          type="email" 
+                          placeholder="liam.s@company.team"
+                          value={newContactEmail}
+                          onChange={(e) => setNewContactEmail(e.target.value)}
+                          className="w-full bg-[#151C26] border border-[#2B3744] rounded-xl px-4 py-3 text-xs text-white focus:outline-none focus:border-blue-500 transition-colors"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="flex gap-3 pt-6 border-t border-[#2B3744]/30">
+                      <button
+                        type="button"
+                        onClick={() => setIsAddingContact(false)}
+                        className="flex-1 py-3 bg-[#232E3C] hover:bg-[#2c394c] text-xs font-semibold text-slate-300 rounded-xl transition-all cursor-pointer border border-[#2B3744]/20"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        type="submit"
+                        className="flex-1 py-3 bg-blue-600 hover:bg-blue-500 text-xs font-semibold text-white rounded-xl shadow-lg shadow-blue-500/20 transition-all cursor-pointer"
+                      >
+                        Save Contact
+                      </button>
+                    </div>
+                  </form>
+                </motion.div>
+              ) : (
+                /* 3. PRIMARY CONTACT LIST VIEW WITH ELEGANT DARK HEADER */
+                <motion.div
+                  key="list"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  className="flex-1 flex flex-col h-full overflow-hidden"
+                >
+                  {/* Upper bar & Quick Actions */}
+                  <div className="px-8 pb-3">
+                    <motion.div
+                      variants={headerVariants}
+                      animate="visible"
+                      initial="hidden"
+                      className="flex items-center justify-between mb-5 mt-2 flex-shrink-0"
+                    >
+                      <div>
+                        <h3 className="text-2xl font-semibold tracking-tight text-white font-display">
+                          New Chat
+                        </h3>
+                        <p className="text-[10px] text-slate-500 font-medium uppercase tracking-widest mt-1">
+                          {filteredContacts.length} of {contacts.length} Contacts Available
+                        </p>
+                      </div>
+
+                      {/* Header interaction dynamic creator */}
+                      <div className="flex items-center gap-1">
+                        <button
+                          onClick={() => setIsAddingContact(true)}
+                          className="w-10 h-10 rounded-full bg-[#232E3C] border border-[#2B3744] flex items-center justify-center text-slate-400 hover:text-white hover:bg-[#2b3744] transition-all cursor-pointer"
+                          title="Add teammate dynamically"
+                        >
+                          <Plus className="w-5 h-5" />
+                        </button>
+                      </div>
+                    </motion.div>
+
+                    {/* Filter Tabs matching Elegant Dark input elements */}
+                    <div className="flex items-center gap-1 p-1 bg-[#151C26] rounded-2xl mb-4 border border-[#2B3744]/40">
+                      {(["All", "Favorites", "Online"] as FilterTab[]).map(tab => (
+                        <button
+                          key={tab}
+                          onClick={() => setSelectedTab(tab)}
+                          className={`flex-1 text-[11px] font-medium py-2 px-3 rounded-xl transition-all cursor-pointer ${
+                            selectedTab === tab 
+                              ? "bg-[#232E3C] text-white shadow-sm font-semibold" 
+                              : "text-slate-400 hover:text-white"
+                          }`}
+                        >
+                          {tab}
+                        </button>
+                      ))}
+                    </div>
+
+                    {/* Search Field styled exactly like Elegant Dark input container */}
+                    <div className="relative mb-4">
+                      <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none">
+                        <Search className="h-4 w-4 text-slate-500" />
+                      </div>
+                      <input
+                        type="text"
+                        placeholder="Search contacts..."
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        className="w-full bg-[#151C26] border border-[#2B3744] rounded-2xl py-3 pl-11 pr-10 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/20 transition-all duration-200"
+                      />
+                      {searchQuery && (
+                        <button
+                          onClick={() => setSearchQuery("")}
+                          className="absolute right-4 top-3 text-slate-500 hover:text-slate-200 transition-colors cursor-pointer"
+                        >
+                          <X className="h-4 w-4" />
+                        </button>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Scrollable contact list using the style rules from mockup */}
+                  <div className="flex-1 overflow-y-auto px-4 space-y-1.5 custom-scrollbar">
+                    {filteredContacts.length === 0 ? (
+                      <motion.div
+                        initial={{ opacity: 0, y: 5 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="flex flex-col items-center justify-center py-20 text-slate-500 text-center"
+                      >
+                        <Search className="h-8 w-8 mb-2 text-slate-600 opacity-40" />
+                        <span className="text-xs font-semibold text-slate-400">No contacts found</span>
+                        <span className="text-[10px] text-slate-600 mt-1 max-w-[200px] leading-relaxed">
+                          Double check your keywords or filter preferences.
+                        </span>
+                      </motion.div>
+                    ) : (
+                      <motion.div
+                        variants={listVariants}
+                        animate="visible"
+                        initial="hidden"
+                        className="space-y-1"
+                      >
+                        {filteredContacts.map((contact) => (
+                          <motion.div
+                            key={contact.id}
+                            variants={itemVariants}
+                            whileHover={{
+                              backgroundColor: "rgba(35, 46, 60, 0.6)",
+                              x: 2,
+                              transition: { duration: 0.12 },
+                            }}
+                            onClick={() => setActiveChatContact(contact)}
+                            className={`flex items-center justify-between p-4 rounded-2xl hover:bg-[#232E3C] transition-all cursor-pointer border border-transparent group ${
+                              contact.isFavorite ? "bg-[#232E3C]/40 border-[#2B3744]/30" : ""
+                            }`}
+                          >
+                            <div className="flex items-center gap-4 min-w-0">
+                              {/* Avatar Block */}
+                              <div className="relative flex-shrink-0">
+                                <div className="w-12 h-12 rounded-full overflow-hidden border-2 border-[#2B3744] group-hover:border-blue-500/30 transition-all duration-200">
+                                  <img
+                                    src={contact.avatar}
+                                    alt={contact.name}
+                                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                                    referrerPolicy="no-referrer"
+                                  />
+                                </div>
+                                {/* Online indicator dot exactly styled like design */}
+                                <span className={`absolute bottom-0 right-0 w-3 h-3 rounded-full border-2 border-[#1B2430] ${
+                                  contact.status === "Online" ? "bg-green-500" :
+                                  contact.status === "Away" ? "bg-amber-500" : "bg-slate-500"
+                                }`} />
+                              </div>
+
+                              {/* Details */}
+                              <div className="min-w-0">
+                                <span className="block text-[15px] font-medium text-slate-200 group-hover:text-white transition-colors truncate">
+                                  {contact.name}
+                                </span>
+                                <span className={`block text-xs mt-0.5 truncate transition-colors ${
+                                  contact.status === "Online" ? "text-blue-400" : "text-slate-500"
+                                }`}>
+                                  {contact.status === "Online" ? "Active now" : contact.note}
+                                </span>
+                              </div>
+                            </div>
+
+                            {/* Right accessories (favorite bookmark + chevron) */}
+                            <div className="flex items-center gap-1.5 flex-shrink-0 opacity-80 group-hover:opacity-100 transition-opacity">
+                              <button
+                                onClick={(e) => handleToggleFavorite(contact.id, e)}
+                                className="p-1.5 rounded-lg hover:bg-[#151C26] text-slate-600 hover:text-amber-500 transition-all cursor-pointer"
+                                title="Toggle favorite status"
+                              >
+                                <Star className={`w-4 h-4 ${contact.isFavorite ? "fill-amber-500 text-amber-500" : ""}`} />
+                              </button>
+                              <ChevronRight className="w-4 h-4 text-slate-600 group-hover:text-slate-300 group-hover:translate-x-0.5 transition-all" />
+                            </div>
+                          </motion.div>
+                        ))}
+                      </motion.div>
+                    )}
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            {/* Sweep Indicator / Simulated Mobile Home Bar precisely matching mockup */}
+            <div className="w-full flex justify-center pb-1 flex-shrink-0">
+              <div className="w-12 h-1 bg-slate-700 rounded-full opacity-50"></div>
+            </div>
+          </motion.div>
