@@ -200,7 +200,7 @@ function Modal() {
           <div style={{ marginBottom: 24 }}>
             <div style={{ fontSize: 11, color: "#475569", letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 8 }}>workspace</div>
             <div style={{ fontSize: 24, fontWeight: 600, color: "#f1f5f9", lineHeight: 1.25, marginBottom: 8 }}>Connect &amp; Chat</div>
-            
+
           </div>
 
           {/* Quick pinboard */}
@@ -233,44 +233,43 @@ function Modal() {
         </div>
 
         {/* ── FAB Button ── */}
-       <motion.div
-            onClick={() => {
-              setIsOpen((prev) => !prev);
-              if (isOpen) {
-                setActiveChatContact(null);
-                setIsAddingContact(false);
-              }
-            }}
-            whileHover={{ scale: 1.08 }}
-            whileTap={{ scale: 0.92 }}
-            transition={{ type: "spring", stiffness: 500, damping: 20, mass: 0.8 }}
-            className={`absolute bottom-8 right-8 z-50 rounded-full flex items-center justify-center w-14 h-14 cursor-pointer  border transition-colors ${
-              isOpen 
-                ? "bg-[#232E3C] text-white shadow-[#000000]/40 border-[#2B3744] hover:bg-[#2b3744]" 
-                : "bg-blue-600 text-white shadow-blue-900/40 border-blue-400/20 hover:bg-blue-500"
+        <motion.div
+          onClick={() => {
+            setIsOpen((prev) => !prev);
+            if (isOpen) {
+              setActiveChatContact(null);
+              setIsAddingContact(false);
+            }
+          }}
+          whileHover={{ scale: 1.08 }}
+          whileTap={{ scale: 0.92 }}
+          transition={{ type: "spring", stiffness: 500, damping: 20, mass: 0.8 }}
+          className={`absolute bottom-8 right-8 z-50 rounded-full flex items-center justify-center w-14 h-14 cursor-pointer  border transition-colors ${isOpen
+              ? "bg-[#232E3C] text-white shadow-[#000000]/40 border-[#2B3744] hover:bg-[#2b3744]"
+              : "bg-blue-600 text-white shadow-blue-900/40 border-blue-400/20 hover:bg-blue-500"
             }`}
-          >
-            <AnimatePresence mode="wait" initial={false}>
-             
-                <motion.div
-                  key="open"
-                  initial={{ rotate: 90, opacity: 0, scale: 0.8 }}
-                  animate={{ rotate: 0, opacity: 1, scale: 1 }}
-                  exit={{ rotate: -90, opacity: 0, scale: 0.8 }}
-                  transition={{ duration: 0.15 }}
-                  className="flex items-center justify-center"
-                >
-                  {/* Plus icon inside circular toggle according to Elegant Dark mockup */}
-                   <svg xmlns="http://www.w3.org/2000/svg" width="1.9em" height="1.9em" viewBox="0 0 16 16">
-                  <path
-                    fill="#ffffff"
-                    d="M8 2a6 6 0 1 1-3.004 11.195l-2.338.78a.5.5 0 0 1-.639-.612l.712-2.491A6 6 0 0 1 8 2m.5 3.5a.5.5 0 0 0-1 0v2h-2a.5.5 0 0 0 0 1h2v2a.5.5 0 0 0 1 0v-2h2a.5.5 0 0 0 0-1h-2z"
-                  />
-                </svg>
-                </motion.div>
-              
-            </AnimatePresence>
-          </motion.div>
+        >
+          <AnimatePresence mode="wait" initial={false}>
+
+            <motion.div
+              key="open"
+              initial={{ rotate: 90, opacity: 0, scale: 0.8 }}
+              animate={{ rotate: 0, opacity: 1, scale: 1 }}
+              exit={{ rotate: -90, opacity: 0, scale: 0.8 }}
+              transition={{ duration: 0.15 }}
+              className="flex items-center justify-center"
+            >
+              {/* Plus icon inside circular toggle according to Elegant Dark mockup */}
+              <svg xmlns="http://www.w3.org/2000/svg" width="1.9em" height="1.9em" viewBox="0 0 16 16">
+                <path
+                  fill="#ffffff"
+                  d="M8 2a6 6 0 1 1-3.004 11.195l-2.338.78a.5.5 0 0 1-.639-.612l.712-2.491A6 6 0 0 1 8 2m.5 3.5a.5.5 0 0 0-1 0v2h-2a.5.5 0 0 0 0 1h2v2a.5.5 0 0 0 1 0v-2h2a.5.5 0 0 0 0-1h-2z"
+                />
+              </svg>
+            </motion.div>
+
+          </AnimatePresence>
+        </motion.div>
         {/* ── Modal Sheet ── */}
         <AnimatePresence>
           {isOpen && (

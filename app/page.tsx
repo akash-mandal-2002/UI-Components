@@ -1,18 +1,18 @@
 "use client"
 
 import React, { useState } from 'react';
-import AddButton from './components/AddButton/AddButton';
-import Modal from './components/AddButton/Modal';
 
+import Modal from './components/AddButton/Modal';
+import LiquidImage from "./components/LiquidImage/LiquidImage";
 export default function App() {
-  
+
 
 
   return (
-    <div className="min-h-screen flex items-center bg-[#232E3C] justify-center space-x-24" id="main-playground">
-        {/* <AddButton/> */}
+    <div className="min-h-screen flex items-center  justify-center space-x-24" id="main-playground">
 
-        <Modal/>
+      <LiquidImage />
+
     </div>
   );
 }
